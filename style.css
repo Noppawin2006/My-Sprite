@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    background: #f3f4f6;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    width: 500px;
+    height: 500px;
+    border: 2px solid #444;
+    background: white;
+    image-rendering: pixelated;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+.toolbar {
+    margin-top: 15px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 15px;
+
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.toolbar button{
+    width:40px;
+    height:40px;
+
+    border:1px solid #bbb;
+    border-radius:6px;
+
+    background:white;
+    cursor:pointer;
+    font-size:18px;
+
+    transition:.2s;
+}
+
+.toolbar button:hover{
+    background:#e9ecef;
+}
+
+.toolbar input[type="color"]{
+    width:45px;
+    height:40px;
+    border:none;
+    cursor:pointer;
+}
+
+.toolbar input[type="range"]{
+    width:120px;
+}
+
+#brushValue{
+    width:20px;
+    text-align:center;
+    font-weight:bold;
+}
