@@ -44,7 +44,7 @@ function drawBrush(x, y, size, r, g, b, a = 255) {
 
 }
 
-function drawBrushLine(x1, y1, x2, y2, size, r, g, b, a = 255) {
+function drawLine(x1, y1, x2, y2, size, r, g, b, a = 255) {
 
     const dx = Math.abs(x2 - x1);
     const dy = Math.abs(y2 - y1);
@@ -78,26 +78,6 @@ function drawBrushLine(x1, y1, x2, y2, size, r, g, b, a = 255) {
 
 }
 
-function drawLine(x1, y1, x2, y2,r, g, b, a = 255) {
-  const dx = Math.abs(x2 - x1);
-  const dy = Math.abs(y2 - y1);
-
-  if(dx > dy) {
-    const m = (y2 - y1) / (x2 - x1);
-    const c = y1 - m * x1;
-    for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
-      const y = Math.round(m * x + c);
-      putPixel(x, y, r, g, b, a);
-    }
-  } else {
-    const m = (x2 - x1) / (y2 - y1);
-    const c = x1 - m * y1;
-    for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
-      const x = Math.round(m * y + c);
-      putPixel(x, y, r, g, b, a);
-    }
-  }
-}
 
 function drawRect(x1, y1, x2, y2, size, r, g, b, a = 255) {
 
@@ -107,10 +87,10 @@ function drawRect(x1, y1, x2, y2, size, r, g, b, a = 255) {
     const maxSize = Math.max(1, Math.floor(Math.min(w, h) / 2));
     const s = Math.min(size, maxSize);
 
-    drawBrushLine(x1, y1, x2, y1, s, r, g, b, a);
-    drawBrushLine(x2, y1, x2, y2, s, r, g, b, a);
-    drawBrushLine(x2, y2, x1, y2, s, r, g, b, a);
-    drawBrushLine(x1, y2, x1, y1, s, r, g, b, a);
+    drawLine(x1, y1, x2, y1, s, r, g, b, a);
+    drawLine(x2, y1, x2, y2, s, r, g, b, a);
+    drawLine(x2, y2, x1, y2, s, r, g, b, a);
+    drawLine(x1, y2, x1, y1, s, r, g, b, a);
 }
 
 function drawRectFilled(x1, y1, x2, y2, r, g, b, a = 255) {
@@ -133,15 +113,7 @@ function drawEllipse(cx, cy, rx, ry, r, g, b, a = 255) {
   }
 }
 
-function drawSprite(sprite, x, y, r, g, b, a = 255) {
-  for (let j = 0; j < sprite.length; j++) {
-    for (let i = 0; i < sprite[j].length; i++) {
-      if (sprite[j][i] === 1) {
-        putPixel(x + i, y + j, r, g, b, a);
-      }
-    }
-  }
-}
+
 const eraserSize = 12; // ขนาดสี่เหลี่ยมยางลบ (ปรับตัวเลขนี้เพื่อเปลี่ยนขนาดได้)
 
 function eraseSquare(cx, cy, size) {
@@ -249,7 +221,7 @@ canvas.addEventListener('mouseup', (event) => {
     if (tool === "line") {
 
         pixels.set(snapshot); // คืนค่า pixel เดิมก่อน (ลบ preview เก่าทิ้ง)
-        drawBrushLine(startX, startY, x, y, brushSize, r, g, b);
+        drawLine(startX, startY, x, y, brushSize, r, g, b);
         ctx.putImageData(imageData, 0, 0);
 
         snapshot = null;
@@ -292,7 +264,7 @@ canvas.addEventListener('mousemove', (event) => {
 
     if(tool === "pencil"){
 
-        drawBrushLine(previousX, previousY, x, y, brushSize, r, g, b);
+        drawLine(previousX, previousY, x, y, brushSize, r, g, b);
 
     }
     else if(tool === "eraser"){
@@ -303,7 +275,7 @@ canvas.addEventListener('mousemove', (event) => {
     else if(tool === "line"){
 
         pixels.set(snapshot);           // คืนค่า pixel เดิม (ลบเส้น preview เฟรมก่อนหน้าทิ้ง)
-        drawBrushLine(startX, startY, x, y, brushSize, r, g, b); // วาดเส้น preview ทับลงไปใหม่
+        drawLine(startX, startY, x, y, brushSize, r, g, b); // วาดเส้น preview ทับลงไปใหม่
         ctx.putImageData(imageData, 0, 0);
 
     }
