@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Materials</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+        }
+    </style>
+</head>
+<style>
+#portfolio {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    width: 500px;
+    padding: 30px;
+
+    background: rgba(20, 20, 20, 0.95);
+    color: white;
+
+    border: 2px solid white;
+    border-radius: 15px;
+
+    font-family: Arial, sans-serif;
+    z-index: 10;
+}
+
+#portfolio h1 {
+    margin-top: 0;
+}
+
+#portfolio h2 {
+    margin-bottom: 5px;
+}
+
+#portfolio p {
+    margin: 8px 0;
+}
+
+#portfolio button {
+    margin-top: 15px;
+    padding: 8px 20px;
+    cursor: pointer;
+}
+</style>
+
+<body>
+    <div id="portfolio">
+    <h1>PORTFOLIO</h1>
+
+    <p><b>นพวินทร์ อุดมหิรัญธิติชัย</b></p>
+    <p>รหัสนิสิต : 6721601273</p>
+    <p>สาขา : วิทยาการคอมพิวเตอร์</p>
+    <p>คณะ : ศิลปศาสตร์และวิทยาศาสตร์</p>
+    <p>มหาวิทยาลัย : เกษตรศาสตร์ วิทยาเขตกำแพงแสน</p>
+
+    <button onclick="hidePortfolio()">CLOSE</button>
+</div>
+    <!-- Core Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- CDN Meshopt Decoder -->
+    <script src="https://cdn.jsdelivr.net/npm/meshoptimizer@0.18.1/meshopt_decoder.js"></script>
+
+    <script>
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        
+        // 1. เปิดใช้งานการคำนวณเงา (Shadow Map)
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        document.body.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x222222);
+
+        const camera = new THREE.PerspectiveCamera(
+            45,
+            window.innerWidth / window.innerHeight,
+            0.01,
+            10000
+        );
+        camera.position.set(0, 0, 10);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // 2. ปรับปรุงระบบแสง (Lighting)
+        // ลด AmbientLight เพื่อไม่ให้แสงซัดจนภาพขาวโพน (จากเดิม 2.0 เหลือ 0.5)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        // แสงหลักสร้างเงา (Directional Light)
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight1.position.set(5, 12, 8);
+        dirLight1.castShadow = true; // ให้แสงส่งเงา
+        dirLight1.shadow.mapSize.width = 2048; // ความละเอียดเงา
+        dirLight1.shadow.mapSize.height = 2048;
+        scene.add(dirLight1);
+
+        // แสงส่องซัพพอร์ตมุมมืด (Fill Light)
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-5, 5, -5);
+        scene.add(fillLight);
+
+        const shaderLeaves = [];
+
+        // Picking
+        const pickables = [];
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        let tvMesh;
+        let lampLight;
+        let lampOn = false;
+        let lampMesh;
+        let originalLampColor;
+
+        // MeshoptDecoder setup and model loading
+        MeshoptDecoder.ready.then(() => {
+            const gltfLoader = new THREE.GLTFLoader();
+            gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+            const glbUrl = 'https://noppawin2006.github.io/My-Sprite/room.glb';
+
+            gltfLoader.load(
+                glbUrl,
+                (gltf) => {
+                    const model = gltf.scene;
+
+                   
+                model.traverse((child) => {
+
+    if (child.isMesh) {
+
+        child.castShadow = true;
+        child.receiveShadow = true;
+        // เพิ่มโคมไฟให้สามารถคลิกได้
+    if (child.name === "Cylinder004") {
+        pickables.push(child);
+        lampMesh = child;
+
+        // แยก Material ของโคมออกจากวัตถุอื่น
+        lampMesh.material = lampMesh.material.clone();
+
+        if (lampMesh.material && lampMesh.material.color) {
+            originalLampColor = lampMesh.material.color.clone();
+        }
+    }
+
+    if (child.name === "Plane007") {
+     pickables.push(child);
+     tvMesh = child;
+}
+
+        if (child.material) {
+
+            child.material.needsUpdate = true;
+
+            if (child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+            }
+
+            
+            // Vertex Shader ใบไม้
+            if (
+                child.name === "Plane008" ||
+                child.name === "Plane009" ||
+                child.name === "Plane010" ||
+                child.name === "Plane014" ||
+                child.name === "Plane012" ||
+                child.name === "Plane015" ||
+                child.name === "Plane013" ||
+                child.name === "Plane011" 
+            ) {
+
+               const oldMaterial = child.material;
+
+               const uniforms = {
+                uTime: { value: 0.0 },
+                uColor: { value: oldMaterial.color.clone() }
+            };
+
+                console.log("==========");
+                console.log("NAME:", child.name);
+                console.log("MATERIAL:", oldMaterial);
+                console.log("MAP:", oldMaterial.map);
+                console.log("ALPHA MAP:", oldMaterial.alphaMap);
+                console.log("COLOR:", oldMaterial.color);
+                console.log("TYPE:", oldMaterial.type);
+
+                const vertexShader = `
+                    uniform float uTime;
+
+                    varying vec2 vUv;
+
+                    void main() {
+
+                        vUv = uv;
+
+                        vec3 pos = position;
+
+                        pos.z += sin(pos.x * 5.0 + uTime * 2.0) * 0.5;
+
+                        gl_Position =
+                            projectionMatrix *
+                            modelViewMatrix *
+                            vec4(pos, 1.0);
+                    }
+                `;
+
+                const fragmentShader = `
+                    precision mediump float;
+
+                    uniform vec3 uColor;
+
+                    varying vec2 vUv;
+
+                    void main() {
+
+                        gl_FragColor = vec4(uColor, 1.0);
+                    }
+                `;
+
+                child.material = new THREE.ShaderMaterial({
+
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+
+                    uniforms: uniforms,
+
+                    side: THREE.DoubleSide
+
+                });
+
+                shaderLeaves.push(uniforms);
+            }
+        }
+    }
+});
+                    scene.add(model);
+                    // ไฟของโคมไฟ
+                    lampLight = new THREE.PointLight(0xffffcc, 0, 8);
+                    lampLight.castShadow = true;
+
+                    scene.add(lampLight);
+
+                    // Center model within view
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+
+                    model.position.x += (model.position.x - center.x);
+                    model.position.y += (model.position.y - center.y);
+                    model.position.z += (model.position.z - center.z);
+                    const lamp = model.getObjectByName("Cylinder004");
+
+                    if (lamp) {
+                        const lampPosition = new THREE.Vector3();
+                        lamp.getWorldPosition(lampPosition);
+                        lampLight.position.copy(lampPosition);
+                    }
+
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 1.3;
+
+                    camera.position.set(0, maxDim / 2, cameraZ);
+                    camera.lookAt(0, 0, 0);
+
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+                },
+                (xhr) => {
+                    if (xhr.lengthComputable) {
+                        console.log((xhr.loaded / xhr.total * 100).toFixed(2) + '% loaded');
+                    }
+                },
+                (error) => {
+                    console.error('Error loading file:', error);
+                }
+            );
+        });
+
+        function animate(time) {
+
+            requestAnimationFrame(animate);
+
+            // อัปเดตเวลาให้ Vertex Shader
+            shaderLeaves.forEach((uniforms) => {
+                uniforms.uTime.value = time * 0.001;
+            });
+
+            controls.update();
+
+            renderer.render(scene, camera);
+        }
+        renderer.domElement.addEventListener('click', onPick);
+
+        function onPick(e) {
+
+            const r = renderer.domElement.getBoundingClientRect();
+
+            const x = e.clientX - r.left;
+            const y = e.clientY - r.top;
+
+            pointer.x = (x / r.width) * 2 - 1;
+            pointer.y = -(y / r.height) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+
+            const hit = raycaster.intersectObjects(pickables, true)[0];
+
+            if (hit == null) {
+                return;
+            }
+
+            console.log("Picked:", hit.object.name);
+
+            if (hit.object === tvMesh) {
+                showPortfolio();
+                return;
+            }
+
+            lampOn = !lampOn;
+
+            if (lampOn) {
+                lampLight.intensity = 8;
+
+                if (lampMesh && lampMesh.material.color) {
+                    lampMesh.material.color.set(0xffff99);
+                }
+
+            } else {
+                lampLight.intensity = 0;
+
+                if (lampMesh && lampMesh.material.color) {
+                    lampMesh.material.color.copy(originalLampColor);
+                }
+            }
+    }
+        requestAnimationFrame(animate);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function showPortfolio() {
+             document.getElementById("portfolio").style.display = "block";
+    }
+
+        function hidePortfolio() {
+            document.getElementById("portfolio").style.display = "none";
+    }
+    </script>
+</body>
+
+</html>
