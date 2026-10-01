@@ -3,91 +3,22 @@
 
 <head>
     <title>Materials</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #1a1a1a;
-        }
-    </style>
 </head>
-<style>
-#portfolio {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    width: 500px;
-    padding: 30px;
 
-    background: rgba(20, 20, 20, 0.95);
-    color: white;
-
-    border: 2px solid white;
-    border-radius: 15px;
-
-    font-family: Arial, sans-serif;
-    z-index: 10;
-}
-
-#portfolio h1 {
-    margin-top: 0;
-}
-
-#portfolio h2 {
-    margin-bottom: 5px;
-}
-
-#portfolio p {
-    margin: 8px 0;
-}
-
-#portfolio button {
-    margin-top: 15px;
-    padding: 8px 20px;
-    cursor: pointer;
-}
-#portfolio a {
-    display: block;
-    color: #00aaff;
-    font-size: 20px;
-    font-weight: bold;
-    text-decoration: none;
-    margin: 15px 0;
-}
-
-#portfolio a:hover {
-    text-decoration: underline;
-    color: #66ccff;
-}
-</style>
 
 <body>
-<div id="portfolio">
-    <h1>MY PROJECTS</h1>
-
-    <p>
-        <a href="https://noppawin2006.github.io/My-Sprite/Sprite.html" target="_blank">
-            Sprite
-        </a>
-    </p>
-
-    <p>
-        <a href="https://noppawin2006.github.io/My-Sprite/paint.html" target="_blank">
-            Paint
-        </a>
-    </p>
-
-    <p>
-        <a href="https://noppawin2006.github.io/My-Sprite/materialswork.html" target="_blank">
-            Materials Work
-        </a>
-    </p>
-
-    <button onclick="hidePortfolio()">CLOSE</button>
-</div>
+<video
+    id="projectVideo"
+    autoplay
+    loop
+    muted
+    playsinline
+    crossorigin="anonymous"
+    style="display:none;">
+    <source
+        src="https://noppawin2006.github.io/My-Sprite/Project.mp4"
+        type="video/mp4">
+</video>
 </div>
     <!-- Core Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -185,10 +116,33 @@
         }
     }
 
-    if (child.name === "Plane007") {
-     pickables.push(child);
-     tvMesh = child;
-}
+            if (child.name === "Plane018") {
+
+            pickables.push(child);
+            tvMesh = child;
+
+            const video = document.getElementById("projectVideo");
+
+            video.addEventListener("error", () => {
+                console.error("VIDEO ERROR:", video.error);
+            });
+
+            const videoTexture = new THREE.VideoTexture(video);
+
+            videoTexture.encoding = THREE.sRGBEncoding;
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.flipY = false;
+
+            child.material = new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+            });
+
+            video.play().catch((error) => {
+                console.error("Video play error:", error);
+            });
+        }
 
         if (child.material) {
 
@@ -377,7 +331,6 @@
                 return;
             }
 
-            console.log("Picked:", hit.object.name);
 
             if (hit.object === tvMesh) {
                 showPortfolio();
@@ -408,14 +361,6 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        function showPortfolio() {
-             document.getElementById("portfolio").style.display = "block";
-    }
-
-        function hidePortfolio() {
-            document.getElementById("portfolio").style.display = "none";
-    }
     </script>
 </body>
 
