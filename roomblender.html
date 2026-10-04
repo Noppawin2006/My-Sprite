@@ -2,11 +2,34 @@
 <html>
 
 <head>
-    <title>Materials</title>
+    <title>living_room</title>
 </head>
-
-
+<style>
+        /* สไตล์สำหรับปุ่ม Back */
+        #backBtn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            color: #333333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: none; /* ซ่อนปุ่มไว้ก่อนเริ่มต้น */
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s;
+        }
+        #backBtn:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
 <body>
+    <!-- ปุ่มย้อนกลับที่เพิ่มเข้ามาใน Body -->
+    <button id="backBtn">⬅ ย้อนกลับ</button>
 <video
     id="projectVideo"
     autoplay
@@ -29,156 +52,172 @@
     <script src="https://cdn.jsdelivr.net/npm/meshoptimizer@0.18.1/meshopt_decoder.js"></script>
 
     <script>
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        
-        // 1. เปิดใช้งานการคำนวณเงา (Shadow Map)
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        
-        document.body.appendChild(renderer.domElement);
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.outputEncoding = THREE.sRGBEncoding;
+                
+                // 1. เปิดใช้งานการคำนวณเงา (Shadow Map)
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                
+                document.body.appendChild(renderer.domElement);
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x222222);
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x222222);
 
-        const camera = new THREE.PerspectiveCamera(
-            45,
-            window.innerWidth / window.innerHeight,
-            0.01,
-            10000
-        );
-        camera.position.set(0, 0, 10);
+                const camera = new THREE.PerspectiveCamera(
+                    45,
+                    window.innerWidth / window.innerHeight,
+                    0.01,
+                    10000
+                );
+                camera.position.set(0, 0, 10);
 
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // 2. ปรับปรุงระบบแสง (Lighting)
-        // ลด AmbientLight เพื่อไม่ให้แสงซัดจนภาพขาวโพน (จากเดิม 2.0 เหลือ 0.5)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+                // 2. ปรับปรุงระบบแสง (Lighting)
+                // ลด AmbientLight เพื่อไม่ให้แสงซัดจนภาพขาวโพน (จากเดิม 2.0 เหลือ 0.5)
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
 
-        // แสงหลักสร้างเงา (Directional Light)
-        const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight1.position.set(5, 12, 8);
-        dirLight1.castShadow = true; // ให้แสงส่งเงา
-        dirLight1.shadow.mapSize.width = 2048; // ความละเอียดเงา
-        dirLight1.shadow.mapSize.height = 2048;
-        scene.add(dirLight1);
+                // แสงหลักสร้างเงา (Directional Light)
+                const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+                dirLight1.position.set(5, 12, 8);
+                dirLight1.castShadow = true; // ให้แสงส่งเงา
+                dirLight1.shadow.mapSize.width = 2048; // ความละเอียดเงา
+                dirLight1.shadow.mapSize.height = 2048;
+                scene.add(dirLight1);
 
-        // แสงส่องซัพพอร์ตมุมมืด (Fill Light)
-        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-        fillLight.position.set(-5, 5, -5);
-        scene.add(fillLight);
+                // แสงส่องซัพพอร์ตมุมมืด (Fill Light)
+                const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+                fillLight.position.set(-5, 5, -5);
+                scene.add(fillLight);
 
-        const shaderLeaves = [];
+                const shaderLeaves = [];
 
-        // Picking
-        const pickables = [];
-        const raycaster = new THREE.Raycaster();
-        const pointer = new THREE.Vector2();
+                // Picking
+                const pickables = [];
+                const raycaster = new THREE.Raycaster();
+                const pointer = new THREE.Vector2();
 
-        let tvMesh;
-        let lampLight;
-        let lampOn = false;
-        let lampMesh;
-        let originalLampColor;
+                let tvMesh;
+                let lampLight;
+                let lampOn = false;
+                let lampMesh;
+                let originalLampColor;
 
-        // MeshoptDecoder setup and model loading
-        MeshoptDecoder.ready.then(() => {
-            const gltfLoader = new THREE.GLTFLoader();
-            gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+                //  ตัวแปรสำหรับควบคุมการเคลื่อนที่กล้องไปยังวัตถุ ---
+                let targetLookAt = new THREE.Vector3(0, 0, 0);
+                let targetCamPos = null;
+                let photoMesh; // ตัวแปรเก็บอ้างอิง Plane016
 
-            const glbUrl = 'https://noppawin2006.github.io/My-Sprite/room2.glb';
+                // ตัวแปรสำหรับเก็บตำแหน่งกล้องเดิมก่อนซูมๆ
+                let isZoomed = false;
+                const originalCamPos = new THREE.Vector3();
+                const originalCamTarget = new THREE.Vector3();
+                const zoomCamPos = new THREE.Vector3();
+                const zoomCamTarget = new THREE.Vector3();
 
-            gltfLoader.load(
-                glbUrl,
-                (gltf) => {
-                    const model = gltf.scene;
+                // MeshoptDecoder setup and model loading
+                MeshoptDecoder.ready.then(() => {
+                    const gltfLoader = new THREE.GLTFLoader();
+                    gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-                   
-                model.traverse((child) => {
+                    const glbUrl = 'https://noppawin2006.github.io/My-Sprite/room2.glb';
 
-    if (child.isMesh) {
+                    gltfLoader.load(
+                        glbUrl,
+                        (gltf) => {
+                            const model = gltf.scene;
 
-        child.castShadow = true;
-        child.receiveShadow = true;
-        // เพิ่มโคมไฟให้สามารถคลิกได้
-    if (child.name === "Cylinder004") {
-        pickables.push(child);
-        lampMesh = child;
+                        
+                        model.traverse((child) => {
 
-        // แยก Material ของโคมออกจากวัตถุอื่น
-        lampMesh.material = lampMesh.material.clone();
+            if (child.isMesh) {
 
-        if (lampMesh.material && lampMesh.material.color) {
-            originalLampColor = lampMesh.material.color.clone();
-        }
-    }
+                child.castShadow = true;
+                child.receiveShadow = true;
+                // เพิ่มโคมไฟให้สามารถคลิกได้
+            if (child.name === "Cylinder004") {
+                pickables.push(child);
+                lampMesh = child;
 
-            if (child.name === "Plane018") {
+                // แยก Material ของโคมออกจากวัตถุอื่น
+                lampMesh.material = lampMesh.material.clone();
 
-            pickables.push(child);
-            tvMesh = child;
-
-            const video = document.getElementById("projectVideo");
-
-            video.addEventListener("error", () => {
-                console.error("VIDEO ERROR:", video.error);
-            });
-
-            const videoTexture = new THREE.VideoTexture(video);
-
-            videoTexture.encoding = THREE.sRGBEncoding;
-            videoTexture.minFilter = THREE.LinearFilter;
-            videoTexture.magFilter = THREE.LinearFilter;
-            videoTexture.flipY = false;
-
-            child.material = new THREE.MeshBasicMaterial({
-                map: videoTexture,
-                side: THREE.DoubleSide
-            });
-
-            video.play().catch((error) => {
-                console.error("Video play error:", error);
-            });
-        }
-
-        if (child.material) {
-
-            child.material.needsUpdate = true;
-
-            if (child.material.map) {
-                child.material.map.encoding = THREE.sRGBEncoding;
+                if (lampMesh.material && lampMesh.material.color) {
+                    originalLampColor = lampMesh.material.color.clone();
+                }
             }
+                    if (child.name === "Plane016") {
+                    pickables.push(child);
+                    photoMesh = child;
+                }
+
+                    if (child.name === "Plane018") {
+
+                    pickables.push(child);
+                    tvMesh = child;
+
+                    const video = document.getElementById("projectVideo");
+
+                    video.addEventListener("error", () => {
+                        console.error("VIDEO ERROR:", video.error);
+                    });
+
+                    const videoTexture = new THREE.VideoTexture(video);
+
+                    videoTexture.encoding = THREE.sRGBEncoding;
+                    videoTexture.minFilter = THREE.LinearFilter;
+                    videoTexture.magFilter = THREE.LinearFilter;
+                    videoTexture.flipY = false;
+
+                    child.material = new THREE.MeshBasicMaterial({
+                        map: videoTexture,
+                        side: THREE.DoubleSide
+                    });
+
+                    video.play().catch((error) => {
+                        console.error("Video play error:", error);
+                    });
+                }
+
+                if (child.material) {
+
+                    child.material.needsUpdate = true;
+
+                    if (child.material.map) {
+                        child.material.map.encoding = THREE.sRGBEncoding;
+                    }
 
             
-            // Vertex Shader ใบไม้
-            if (
-                child.name === "Plane008" ||
-                child.name === "Plane009" ||
-                child.name === "Plane010" ||
-                child.name === "Plane014" ||
-                child.name === "Plane012" ||
-                child.name === "Plane015" ||
-                child.name === "Plane013" ||
-                child.name === "Plane011" 
-            ) {
+                // Vertex Shader ใบไม้
+                if (
+                    child.name === "Plane008" ||
+                    child.name === "Plane009" ||
+                    child.name === "Plane010" ||
+                    child.name === "Plane014" ||
+                    child.name === "Plane012" ||
+                    child.name === "Plane015" ||
+                    child.name === "Plane013" ||
+                    child.name === "Plane011" 
+                ) {
 
-               const oldMaterial = child.material;
+                const oldMaterial = child.material;
 
-               const uniforms = {
-                uTime: { value: 0.0 },
-                uColor: { value: oldMaterial.color.clone() }
-            };
+                const uniforms = {
+                    uTime: { value: 0.0 },
+                    uColor: { value: oldMaterial.color.clone() }
+                };
 
-                console.log("==========");
-                console.log("NAME:", child.name);
-                console.log("MATERIAL:", oldMaterial);
-                console.log("MAP:", oldMaterial.map);
-                console.log("ALPHA MAP:", oldMaterial.alphaMap);
-                console.log("COLOR:", oldMaterial.color);
-                console.log("TYPE:", oldMaterial.type);
+                    console.log("==========");
+                    console.log("NAME:", child.name);
+                    console.log("MATERIAL:", oldMaterial);
+                    console.log("MAP:", oldMaterial.map);
+                    console.log("ALPHA MAP:", oldMaterial.alphaMap);
+                    console.log("COLOR:", oldMaterial.color);
+                    console.log("TYPE:", oldMaterial.type);
 
                 const vertexShader = `
                     uniform float uTime;
@@ -287,81 +326,133 @@
                     controls.target.set(0, 0, 0);
                     controls.update();
                 },
-                (xhr) => {
-                    if (xhr.lengthComputable) {
-                        console.log((xhr.loaded / xhr.total * 100).toFixed(2) + '% loaded');
-                    }
-                },
-                (error) => {
-                    console.error('Error loading file:', error);
-                }
             );
         });
+            function animate(time) {
+                requestAnimationFrame(animate);
 
-        function animate(time) {
+                // อัปเดตเวลาให้ Vertex Shader ใบไม้ 
+                shaderLeaves.forEach((uniforms) => {
+                    uniforms.uTime.value = time * 0.001;
+                });
 
-            requestAnimationFrame(animate);
-
-            // อัปเดตเวลาให้ Vertex Shader
-            shaderLeaves.forEach((uniforms) => {
-                uniforms.uTime.value = time * 0.001;
-            });
-
-            controls.update();
-
-            renderer.render(scene, camera);
-        }
-        renderer.domElement.addEventListener('click', onPick);
-
-        function onPick(e) {
-
-            const r = renderer.domElement.getBoundingClientRect();
-
-            const x = e.clientX - r.left;
-            const y = e.clientY - r.top;
-
-            pointer.x = (x / r.width) * 2 - 1;
-            pointer.y = -(y / r.height) * 2 + 1;
-
-            raycaster.setFromCamera(pointer, camera);
-
-            const hit = raycaster.intersectObjects(pickables, true)[0];
-
-            if (hit == null) {
-                return;
-            }
-
-
-            if (hit.object === tvMesh) {
-                showPortfolio();
-                return;
-            }
-
-            lampOn = !lampOn;
-
-            if (lampOn) {
-                lampLight.intensity = 8;
-
-                if (lampMesh && lampMesh.material.color) {
-                    lampMesh.material.color.set(0xffff99);
+                // ทำให้กล้องสไลด์ (Lerp) ไปยังเป้าหมายอย่างนุ่มนวล ---
+                if (targetCamPos) {
+                    camera.position.lerp(targetCamPos, 0.05);
+                    controls.target.lerp(targetLookAt, 0.05);
+                    
+                    if (camera.position.distanceTo(targetCamPos) < 0.01) {
+                        targetCamPos = null;
+                    }
                 }
 
-            } else {
-                lampLight.intensity = 0;
+                controls.update();
+                renderer.render(scene, camera);
+            }
 
-                if (lampMesh && lampMesh.material.color) {
-                    lampMesh.material.color.copy(originalLampColor);
+                renderer.domElement.addEventListener('click', onPick);
+
+            function onPick(e) {
+                // ป้องกันไม่ให้คลิกซ้ำซ้อนในขณะที่กล้องกำลังซูมอยู่
+                if (isZoomed) return;
+
+                const r = renderer.domElement.getBoundingClientRect();
+                const x = e.clientX - r.left;
+                const y = e.clientY - r.top;
+
+                pointer.x = (x / r.width) * 2 - 1;
+                pointer.y = -(y / r.height) * 2 + 1;
+
+                raycaster.setFromCamera(pointer, camera);
+                const hit = raycaster.intersectObjects(pickables, true)[0];
+
+                if (hit == null) return;
+
+                const hitObject = hit.object;
+                const hitPosition = new THREE.Vector3();
+                hitObject.getWorldPosition(hitPosition);
+
+                // เมื่อคลิกที่รูปภาพ Plane016
+                if (hitObject === photoMesh) {
+                    // 1. บันทึกตำแหน่งปัจจุบันของกล้องและ Target ไว้ก่อนซูม
+                    originalCamPos.copy(camera.position);
+                    originalCamTarget.copy(controls.target);
+
+                    // 2. กำหนดตำแหน่งเป้าหมายที่จะให้กล้องวิ่งไปซูม
+                    zoomCamTarget.copy(hitPosition);
+                    zoomCamPos.set(
+                        hitPosition.x + 7.0,
+                        hitPosition.y,
+                        hitPosition.z + 5.0
+                    );
+
+                    // 3. สั่งเคลื่อนที่กล้องและเปิดใช้งานสถานะซูม
+                    targetLookAt.copy(zoomCamTarget);
+                    targetCamPos = zoomCamPos;
+                    isZoomed = true;
+
+                    // แสดงปุ่มย้อนกลับ (Back)
+                    document.getElementById("backBtn").style.display = "block";
+                    console.log("คลิกที่รูปภาพ Plane016");
+                }
+
+                // นการทำงานของโคมไฟและทีวี
+                if (hitObject === lampMesh) {
+                    lampOn = !lampOn;
+                    if (lampOn) {
+                        lampLight.intensity = 8;
+                        if (lampMesh && lampMesh.material.color) {
+                            lampMesh.material.color.set(0xffff99);
+                        }
+                    } else {
+                        lampLight.intensity = 0;
+                        if (lampMesh && lampMesh.material.color) {
+                            lampMesh.material.color.copy(originalLampColor);
+                        }
+                    }
+                } 
+                // การซูมเมื่อคลิกที่ทีวี (Plane018)
+                else if (hitObject === tvMesh) {
+                    originalCamPos.copy(camera.position);
+                    originalCamTarget.copy(controls.target);
+
+                    // กำหนดระยะซูมหน้าทีวี (สามารถปรับตัวเลข x, y, z เพิ่มลดได้ตามต้องการ)
+                    zoomCamTarget.copy(hitPosition);
+                    zoomCamPos.set(
+                        hitPosition.x - 3.0,
+                        hitPosition.y,
+                        hitPosition.z + 4.0 // ปรับระยะความใกล้-ไกลตรงนี้
+                    );
+
+                    targetLookAt.copy(zoomCamTarget);
+                    targetCamPos = zoomCamPos;
+                    isZoomed = true;
+
+                    document.getElementById("backBtn").style.display = "block";
+                    console.log("คลิกที่ทีวี");
                 }
             }
-    }
-        requestAnimationFrame(animate);
+             // การทำงานของปุ่ม Back (ย้อนกลับ)
+                document.getElementById("backBtn").addEventListener('click', () => {
+                    if (isZoomed) {
+                        targetLookAt.copy(originalCamTarget);
+                        targetCamPos = originalCamPos; // ดีดกลับตำแหน่งเดิมที่จำไว้ ไม่ให้เพี้ยนแม้จะหมุนจอ
+                        isZoomed = false;
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+                        document.getElementById("backBtn").style.display = "none";
+                    }
+                });
+    
+
+                requestAnimationFrame(animate);
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
     </script>
 </body>
 
 </html>
+
