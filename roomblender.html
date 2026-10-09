@@ -124,7 +124,7 @@
                     const gltfLoader = new THREE.GLTFLoader();
                     gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-                    const glbUrl = 'https://noppawin2006.github.io/My-Sprite/room2.glb';
+                    const glbUrl = 'https://noppawin2006.github.io/My-Sprite/room3.glb';
 
                     gltfLoader.load(
                         glbUrl,
@@ -232,7 +232,7 @@
                         vec3 pos = position;
 
                         // Vertex Shader เดิม → ใบไม้ขยับ
-                        pos.z += sin(pos.x * 5.0 + uTime * 2.0) * 0.5;
+                        pos.z += sin(pos.x * 3.0 + uTime * 4.0) * 1.2;
 
                         // ส่ง Normal ไปให้ Fragment Shader
                         vNormal = normalize(normalMatrix * normal);
